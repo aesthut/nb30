@@ -137,15 +137,32 @@ check setxkbmap  "de-Layout im X (setzt 'browser' selbst)"
 check w3m        "Nachschlagen ohne X"
 check luakit     "Browser (oder firefox-esr als Rueckfall)"
 check git        "Repos"
-# die eigenen Skripte: liegen sie im PATH?
-for T in browser tmux-hilfe tty-font; do
-	check "$T" "eigenes Skript"
-done
 
 if [ -n "$FEHLT" ]; then
 	echo
 	msg "Es fehlt:$FEHLT"
 	echo "    sudo xbps-install -y$FEHLT"
+fi
+
+# Eigene Skripte SEPARAT pruefen — und zwar ob die DATEI liegt, nicht ob sie
+# im PATH auffindbar ist. Der PATH-Eintrag greift erst beim naechsten Login,
+# in diesem Lauf also noch nicht. Sonst meldet die Pruefung sie faelschlich
+# als fehlend und schlaegt 'xbps-install browser tmux-hilfe' vor — Pakete,
+# die es nicht gibt.
+echo
+msg "Eigene Skripte"
+for T in browser tmux-hilfe tty-font; do
+	if [ -x "$HOME/.local/bin/$T" ]; then
+		printf '  \033[32m✓\033[0m %-14s %s\n' "$T" "liegt in ~/.local/bin"
+	else
+		printf '  \033[31m✗\033[0m %-14s %s\n' "$T" "NICHT verlinkt — install.sh nochmal laufen lassen"
+	fi
+done
+if ! command -v tmux-hilfe >/dev/null 2>&1; then
+	echo
+	msg "~/.local/bin ist in DIESER Shell noch nicht im PATH."
+	echo "    source ~/.bash_profile      # jetzt sofort"
+	echo "    (ab dem naechsten Login von selbst)"
 fi
 
 echo
