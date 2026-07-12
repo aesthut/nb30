@@ -44,11 +44,19 @@ command -v xbps-install >/dev/null 2>&1 || {
 #                          fiel es unter den Tisch. 'browser' startet den Bus per
 #                          dbus-run-session nur fuer die Laufzeit des Browsers,
 #                          es laeuft also KEIN Dauerdienst.
+#   dejavu/liberation   -> SKALIERBARE Schriften. Ohne sie hat das System NULL
+#                          Fonts: terminus ist ein Bitmap-Font, den fontconfig
+#                          weder als sans-serif noch als monospace aufloest.
+#                          Firefox zeigt dann eine Seite ganz ohne Text an.
+#                          (Stand schon in der alten Notiz als Fallstrick Nr. 4 —
+#                          und ich habe die Grube beim schlanken Repo wieder
+#                          aufgemacht. 12.7.2026.)
 msg "Pakete installieren"
 sudo xbps-install -Sy \
 	tmux git kbd terminus-font w3m curl dbus \
 	xorg-server xinit xauth setxkbmap \
-	xf86-video-intel mesa-dri xf86-input-libinput
+	xf86-video-intel mesa-dri xf86-input-libinput \
+	dejavu-fonts-ttf liberation-fonts-ttf
 
 # Browser: nicht abbruchhart. Fehlt einer, bleibt nur der zugehoerige Weg zu.
 msg "Browser (luakit als Alltag, firefox-esr als Notnagel)"
@@ -166,6 +174,15 @@ check w3m        "Nachschlagen ohne X"
 check luakit     "Browser (oder firefox-esr als Rueckfall)"
 check git        "Repos"
 check dbus-run-session "Session-Bus fuer den Browser — ohne das startet KEINER"
+
+# Schriften: kein Binary, also von Hand pruefen. Ohne skalierbare Fonts zeigt
+# Firefox eine Seite komplett ohne Text.
+if [ "$(fc-list 2>/dev/null | wc -l)" -gt 0 ]; then
+	printf '  \033[32m✓\033[0m %-14s %s\n' "Schriften" "$(fc-list 2>/dev/null | wc -l) gefunden"
+else
+	printf '  \033[31m✗\033[0m %-14s %s\n' "Schriften" "KEINE — Firefox zeigt keinen Text an"
+	echo "      sudo xbps-install -y dejavu-fonts-ttf liberation-fonts-ttf"
+fi
 
 if [ -n "$FEHLT" ]; then
 	echo

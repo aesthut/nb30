@@ -47,11 +47,25 @@ else
   fi
 fi
 
-# --- GMA 3150: WebKit darf nicht komponieren ------------------------------
-# Der Chip hat kein brauchbares HW-GL (siehe Setup-Doku). Laesst man WebKitGTK
-# trotzdem den Compositor anwerfen, gibt es leere/weisse Seiten oder Abstuerze.
-export WEBKIT_DISABLE_COMPOSITING_MODE=1
-export LIBGL_ALWAYS_SOFTWARE=1
+# --- GMA 3150: die Bremse NUR fuer WebKit, nicht fuer Firefox --------------
+# WEBKIT_DISABLE_COMPOSITING_MODE + LIBGL_ALWAYS_SOFTWARE sind fuer WebKitGTK
+# (luakit, badwolf, surf) noetig: laesst man den Compositor dort anlaufen, gibt
+# es auf der GMA 3150 weisse Seiten oder Abstuerze.
+#
+# Fuer FIREFOX sind sie dagegen schaedlich. LIBGL_ALWAYS_SOFTWARE schaltet jede
+# vorhandene Beschleunigung ab und zwingt ihn, alles in Software zu rechnen —
+# auf einem 1,66-GHz-Atom ist das der Unterschied zwischen "zaeh" und
+# "unbenutzbar". Firefox bringt seine eigene Notloesung mit und kommt allein
+# zurecht. Real aufgefallen (12.7.2026): unter dwm, wo Firefox direkt und ohne
+# diese Variablen gestartet wurde, war er spuerbar schneller als ueber 'browser'.
+case "$BR" in
+  firefox|firefox-esr)
+    : ;;   # Bremse aus. Firefox regelt das selbst.
+  *)
+    export WEBKIT_DISABLE_COMPOSITING_MODE=1
+    export LIBGL_ALWAYS_SOFTWARE=1
+    ;;
+esac
 BRPATH="$(command -v "$BR")"
 
 # --- dbus: der Grund, warum hier monatelang gar nichts startete ------------
@@ -123,21 +137,26 @@ while [ -e "/tmp/.X11-unix/X$d" ]; do d=$((d + 1)); done
 # (Unter dwm fiel das nie auf: dort lief immer schon ein X, also griff der
 # Zweig ganz oben mit $DISPLAY, und dieser hier wurde nie betreten.)
 XRC="$(mktemp /tmp/browser-x.XXXXXX)"
+BRLOG=/tmp/browser-last.log       # immer mitschreiben, s.u.
 {
   echo '#!/bin/sh'
   echo 'setxkbmap de 2>/dev/null'          # de-Layout fuer URL-Zeile und Logins
+  # Der Browser schreibt seine eigenen Meldungen mit. Ohne das sind sie weg,
+  # sobald X den Bildschirm uebernimmt — und man raetselt, warum "nichts geht".
   if [ -n "$URL" ]; then
-    echo "exec $DBUS \"$BRPATH\" \"$URL\""
+    echo "exec $DBUS \"$BRPATH\" \"$URL\" 2>>$BRLOG"
   elif [ "$BR" = surf ]; then
-    echo "exec $DBUS \"$BRPATH\" 'https://start.duckduckgo.com/'"
+    echo "exec $DBUS \"$BRPATH\" 'https://start.duckduckgo.com/' 2>>$BRLOG"
   else
-    echo "exec $DBUS \"$BRPATH\""
+    echo "exec $DBUS \"$BRPATH\" 2>>$BRLOG"
   fi
 } > "$XRC"
 chmod +x "$XRC"
 
+: > "$BRLOG"                      # frisch anfangen, nicht anhaeufen
 echo ">>> $BR startet (Display :$d). Browser schliessen -> zurueck ins Terminal." >&2
-startx "$XRC" -- ":$d"
+echo ">>> Meldungen des Browsers landen in $BRLOG" >&2
+startx "$XRC" -- ":$d" 2>>"$BRLOG"
 RC=$?
 rm -f "$XRC"
 exit $RC
