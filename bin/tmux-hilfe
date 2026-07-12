@@ -38,6 +38,12 @@ printf "    ${G}tmux attach${R}   wieder rein, genau wie vorher\n"
 printf "    ${G}tmux ls${R}       welche Sitzungen laufen?\n"
 printf "    ${G}${R}              ${G}Terminal zumachen, ssh abbrechen: egal. Es laeuft.${R}\n\n"
 
+printf "  ${B}${C}Bequemlichkeiten${R}\n"
+printf "    ${B}M${R}      ${D}Menue${R} — zeigt alle Befehle. Nichts auswendig lernen.\n"
+printf "    ${B}F${R}      Suchliste: Sitzungen, Fenster, Felder anspringen\n"
+printf "    ${B}P${R}      Mitschreiben an/aus  ${G}(landet in ~/tmux-logs/)${R}\n"
+printf "    ${B}Alt+P${R}  die bisherige Ausgabe sichern\n\n"
+
 printf "  ${B}${C}Wenn du nicht weiterweisst${R}\n"
 printf "    ${B}?${R}      alle Tastenkombinationen  ${G}(raus mit q)${R}\n"
 printf "    ${B}[${R}      zurueckblaettern          ${G}(raus mit q)${R}\n"

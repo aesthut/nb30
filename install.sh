@@ -53,7 +53,7 @@ command -v xbps-install >/dev/null 2>&1 || {
 #                          aufgemacht. 12.7.2026.)
 msg "Pakete installieren"
 sudo xbps-install -Sy \
-	tmux git kbd terminus-font w3m curl dbus \
+	tmux git kbd terminus-font w3m curl dbus fzf \
 	xorg-server xinit xauth setxkbmap \
 	xf86-video-intel mesa-dri xf86-input-libinput \
 	dejavu-fonts-ttf liberation-fonts-ttf
@@ -181,6 +181,7 @@ check firefox    "Browser — auf dieser Kiste der einzige brauchbare"
 check xdotool    "zieht das Browserfenster auf den ganzen Schirm (kein WM da)"
 check git        "Repos"
 check dbus-run-session "Session-Bus fuer den Browser — ohne das startet KEINER"
+check fzf        "Suchliste in tmux (Strg+B, dann F)"
 
 # Schriften: kein Binary, also von Hand pruefen. Ohne skalierbare Fonts zeigt
 # Firefox eine Seite komplett ohne Text.
