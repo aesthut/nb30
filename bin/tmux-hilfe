@@ -49,9 +49,30 @@ printf "    ${B}?${R}      alle Tastenkombinationen  ${G}(raus mit q)${R}\n"
 printf "    ${B}[${R}      zurueckblaettern          ${G}(raus mit q)${R}\n"
 printf "    ${B}Strg+B${R} ${B}Strg+B${R}   schickt ein echtes Strg+B ans Programm\n\n"
 
-printf "  ${B}${C}Am NB30${R}\n"
+printf "  ${B}${C}=== In der Shell (ohne Strg+B!) =====================${R}\n\n"
+
+printf "  ${B}${C}Der wichtigste Griff${R}\n"
+printf "    ${B}Strg+R${R}   ${D}durchsucht alles, was du je getippt hast.${R}\n"
+printf "             ${G}Ein paar Buchstaben tippen, Enter. Statt 100x Pfeil-hoch.${R}\n"
+printf "    ${B}Strg+T${R}   Datei aus dem Verzeichnisbaum einfuegen\n"
+printf "    ${B}Tab${R}      vervollstaendigt Befehle, Optionen, Dateien\n\n"
+
+printf "  ${B}${C}Programme${R}\n"
+printf "    ${G}micro datei${R}   ${D}Editor${R}  — Strg+S speichern, Strg+Q raus. Maus geht.\n"
+printf "    ${G}ranger${R}        ${D}Dateimanager${R} — raus mit ${B}q${R}. Pfeile/hjkl, Enter oeffnet.\n"
+printf "    ${G}htop${R}          was laeuft gerade? — raus mit ${B}q${R}\n"
+printf "    ${G}ncdu${R}          wo ist der Plattenplatz hin? — raus mit ${B}q${R}\n"
+printf "    ${G}lazygit${R}       Git ohne Befehle — raus mit ${B}q${R}\n\n"
+
+printf "  ${B}${C}Dateien ansehen${R}\n"
+printf "    ${G}ll${R}            Dateien mit Farben und Groesse\n"
+printf "    ${G}cat datei${R}     Inhalt mit Syntaxfarben\n"
+printf "    ${G}z name${R}        springt dorthin, wo du oft warst\n"
+printf "    ${G}rg wort${R}       sucht in allen Dateien\n\n"
+
+printf "  ${B}${C}Netz${R}\n"
 printf "    ${G}ssh vps${R}       alles, was rechnet — Claude Code laeuft hier nicht\n"
 printf "    ${G}w3m URL${R}       schnell nachschlagen, ohne X\n"
-printf "    ${G}browser URL${R}   echte Webseite (startet X nur fuer den Browser)\n\n"
+printf "    ${G}browser URL${R}   Firefox (uebernimmt den Bildschirm, ${B}Strg+Alt+F1${R} = zurueck)\n\n"
 
-printf "  ${G}Die Maus geht auch: klicken, scrollen, Grenzen ziehen.${R}\n\n"
+printf "  ${G}Fast ueberall gilt: ${B}q${R}${G} beendet. Und die Maus geht auch.${R}\n\n"
