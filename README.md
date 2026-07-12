@@ -31,6 +31,23 @@ Danach `tmux` starten und einmalig `Strg+B`, dann großes `I` für die Plugins.
 | `w3m URL` | schnell nachschlagen, ohne X |
 | `browser URL` | echte Webseite — startet X nur für den Browser |
 
+## Statusleiste
+
+Links der Sessionname und die **Prefix-Anzeige**: Sobald du `Strg+B` gedrückt hast und tmux
+auf die nächste Taste wartet, leuchtet dort `TASTE` auf. Man sieht also, ob tmux zuhört,
+statt zu raten — der größte Gewinn, solange die Griffe noch nicht sitzen.
+
+Rechts CPU, RAM, Akku, Uhrzeit. Über `tmux-cpu` und `tmux-battery`.
+
+Zwei bewusste Einstellungen:
+
+- **`status-interval 15`**, nicht 1. Die Leiste startet bei jeder Aktualisierung
+  Shell-Prozesse — im Sekundentakt würde der Atom N450 zu einem guten Teil sich selbst
+  messen. Eine CPU-Anzeige, die CPU frisst, ist ein schlechter Witz.
+- **Keine Icons.** Die Plugins zeigen standardmäßig Emoji und Batteriesymbole. Ein
+  PSF-Konsolenfont trägt nur ein paar hundert Glyphen — die Icons erschienen dort als leere
+  Kästchen. Also reiner Text und Prozentzahlen.
+
 ## Die Griffe
 
 **Standard-tmux.** Vor jeder Taste: `Strg+B` drücken, loslassen.

@@ -102,9 +102,17 @@ ln -sf "$HERE/.tmux.conf" "$HOME/.tmux.conf"
 
 TPM="$HOME/.tmux/plugins/tpm"
 if [ ! -d "$TPM" ]; then
-	msg "TPM holen (resurrect/continuum — Sessions ueberstehen einen Reboot)"
+	msg "TPM holen (der tmux Plugin Manager)"
 	git clone --depth 1 https://github.com/tmux-plugins/tpm "$TPM"
 fi
+
+# Plugins gleich mitinstallieren, statt den Nutzer 'Strg+B, dann I' tippen zu
+# lassen. install_plugins braucht einen laufenden Server — also einen wegwerf-
+# baren starten.
+msg "tmux-Plugins holen (cpu, battery, prefix-highlight, resurrect, continuum)"
+tmux new-session -d -s _setup 2>/dev/null || true
+"$TPM/bin/install_plugins" >/dev/null 2>&1 || msg "  Warnung: Plugins nicht ladbar (Netz?) — spaeter: Strg+B, dann I"
+tmux kill-session -t _setup 2>/dev/null || true
 
 # --- 4. Skripte nach ~/.local/bin ----------------------------------------
 msg "browser + tmux-hilfe -> ~/.local/bin"
