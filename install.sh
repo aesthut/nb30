@@ -35,9 +35,18 @@ command -v xbps-install >/dev/null 2>&1 || {
 #   mesa-dri            -> swrast-Fallback (HW-GL gibt es auf GMA3150 nicht)
 #   xf86-input-libinput -> sonst laeuft X ohne Tastatur und Maus
 #   setxkbmap           -> 'browser' setzt damit das de-Layout im X
+#   dbus                -> DIE stille Luecke Nr. 9 (12.7.2026): luakit UND
+#                          firefox sind gegen libdbus gelinkt und beenden sich
+#                          ohne laufenden Session-Bus SOFORT und OHNE Meldung.
+#                          Im Xorg-Log steht dann nur "Server terminated
+#                          successfully" — man sucht sich tot. Beim alten Setup
+#                          kam dbus als Beifang mit NetworkManager mit; ohne den
+#                          fiel es unter den Tisch. 'browser' startet den Bus per
+#                          dbus-run-session nur fuer die Laufzeit des Browsers,
+#                          es laeuft also KEIN Dauerdienst.
 msg "Pakete installieren"
 sudo xbps-install -Sy \
-	tmux git kbd terminus-font w3m curl \
+	tmux git kbd terminus-font w3m curl dbus \
 	xorg-server xinit xauth setxkbmap \
 	xf86-video-intel mesa-dri xf86-input-libinput
 
@@ -156,6 +165,7 @@ check setxkbmap  "de-Layout im X (setzt 'browser' selbst)"
 check w3m        "Nachschlagen ohne X"
 check luakit     "Browser (oder firefox-esr als Rueckfall)"
 check git        "Repos"
+check dbus-run-session "Session-Bus fuer den Browser — ohne das startet KEINER"
 
 if [ -n "$FEHLT" ]; then
 	echo

@@ -54,16 +54,40 @@ export WEBKIT_DISABLE_COMPOSITING_MODE=1
 export LIBGL_ALWAYS_SOFTWARE=1
 BRPATH="$(command -v "$BR")"
 
+# --- dbus: der Grund, warum hier monatelang gar nichts startete ------------
+# luakit UND firefox sind gegen libdbus gelinkt. Ohne laufenden Session-Bus
+# beenden sie sich beim Start SOFORT und STILL — keine Fehlermeldung, nichts im
+# Xorg-Log ausser "Server terminated successfully". Man sucht sich tot.
+#
+# 'dbus-run-session' startet einen Bus, der nur so lange lebt wie der Browser.
+# Damit braucht es KEINEN dauerhaften dbus-Dienst — auf einer 2-GB-Kiste
+# genau richtig. Voraussetzung ist das Paket 'dbus' (nicht nur 'dbus-x11',
+# das liefert bloss dbus-launch ohne den Daemon dahinter).
+#
+# ACHTUNG: hier steht bewusst KEIN '--' hinter dbus-run-session. startx zerlegt
+# seine eigene Argumentliste am ersten '--' und haelt alles dahinter fuer
+# X-Server-Optionen. Ein 'dbus-run-session -- luakit' fuehrt darum zu
+#   Fatal server error: Unrecognized option: '/usr/bin/luakit'
+# Das '--' ist ohnehin nur noetig, wenn der Befehl mit einem Bindestrich
+# beginnt. Tut er nicht.
+if have dbus-run-session; then
+  DBUS="dbus-run-session"
+else
+  DBUS=""
+  echo "WARNUNG: dbus-run-session fehlt. luakit/firefox starten damit gar nicht." >&2
+  echo "         sudo xbps-install -y dbus" >&2
+fi
+
 # --- Laeuft schon X? Dann direkt starten ---------------------------------
-# Genau der Fall unter dwm (Super+B). Ohne das wuerde startx einen zweiten
-# X-Server hochziehen — auf dem N450 der sichere Weg ins Chaos.
+# Ohne das wuerde startx einen zweiten X-Server hochziehen — auf dem N450 der
+# sichere Weg ins Chaos.
 if [ -n "${DISPLAY:-}" ]; then
   if [ -n "$URL" ]; then
-    exec "$BRPATH" "$URL"
+    exec $DBUS "$BRPATH" "$URL"
   elif [ "$BR" = surf ]; then
-    exec "$BRPATH" "https://start.duckduckgo.com/"
+    exec $DBUS "$BRPATH" "https://start.duckduckgo.com/"
   else
-    exec "$BRPATH"
+    exec $DBUS "$BRPATH"
   fi
 fi
 
@@ -79,14 +103,41 @@ d=1
 while [ -e "/tmp/.X11-unix/X$d" ]; do d=$((d + 1)); done
 
 # --- als Single-App starten ----------------------------------------------
-# Vor dem Browser noch das dt./oesterr. Tastaturlayout setzen (fuer URL/Login).
-# surf braucht eine URL; ohne Argument bekommt es eine schlichte Startseite.
-CMD="setxkbmap de 2>/dev/null; exec '$BRPATH'"
-if [ -n "$URL" ]; then
-  CMD="$CMD '$URL'"
-elif [ "$BR" = surf ]; then
-  CMD="$CMD 'https://start.duckduckgo.com/'"
-fi
+# WICHTIG — hier lag der Fehler, der monatelang niemandem auffiel:
+#
+# Frueher stand hier
+#     startx /bin/sh -c "$CMD" -- ":$d"
+# und $CMD war ein String wie "setxkbmap de; exec luakit https://orf.at".
+# startx ZERLEGT seine Argumente aber an den Leerzeichen und zerstoert dabei
+# die Anfuehrungszeichen. Bei 'sh -c' kam nur noch das erste Wort an. Der
+# Browser wurde also NIE gestartet — 'setxkbmap' lief, endete, X machte zu.
+#
+# Nachgewiesen mit 'startx /bin/sh -c "sleep 8"': daraus wurde
+#     sleep: fehlender Operand
+# Die 8 war unterwegs verschwunden.
+#
+# Deshalb: kein Befehls-String, sondern eine echte SKRIPTDATEI. Daran kann
+# startx nichts zerlegen. Das ist auch der Grund, warum ~/.xinitrc eine Datei
+# ist und kein String.
+#
+# (Unter dwm fiel das nie auf: dort lief immer schon ein X, also griff der
+# Zweig ganz oben mit $DISPLAY, und dieser hier wurde nie betreten.)
+XRC="$(mktemp /tmp/browser-x.XXXXXX)"
+{
+  echo '#!/bin/sh'
+  echo 'setxkbmap de 2>/dev/null'          # de-Layout fuer URL-Zeile und Logins
+  if [ -n "$URL" ]; then
+    echo "exec $DBUS \"$BRPATH\" \"$URL\""
+  elif [ "$BR" = surf ]; then
+    echo "exec $DBUS \"$BRPATH\" 'https://start.duckduckgo.com/'"
+  else
+    echo "exec $DBUS \"$BRPATH\""
+  fi
+} > "$XRC"
+chmod +x "$XRC"
 
 echo ">>> $BR startet (Display :$d). Browser schliessen -> zurueck ins Terminal." >&2
-exec startx /bin/sh -c "$CMD" -- ":$d"
+startx "$XRC" -- ":$d"
+RC=$?
+rm -f "$XRC"
+exit $RC
