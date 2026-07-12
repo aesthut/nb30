@@ -115,9 +115,9 @@ tmux new-session -d -s _setup 2>/dev/null || true
 tmux kill-session -t _setup 2>/dev/null || true
 
 # --- 4. Skripte nach ~/.local/bin ----------------------------------------
-msg "browser + tmux-hilfe -> ~/.local/bin"
+msg "eigene Skripte -> ~/.local/bin"
 mkdir -p "$HOME/.local/bin"
-for TOOL in browser tmux-hilfe tty-font; do
+for TOOL in browser tmux-hilfe tty-font tmux-status; do
 	chmod +x "$HERE/bin/$TOOL"
 	ln -sf "$HERE/bin/$TOOL" "$HOME/.local/bin/$TOOL"
 done
@@ -170,7 +170,7 @@ fi
 # die es nicht gibt.
 echo
 msg "Eigene Skripte"
-for T in browser tmux-hilfe tty-font; do
+for T in browser tmux-hilfe tty-font tmux-status; do
 	if [ -x "$HOME/.local/bin/$T" ]; then
 		printf '  \033[32m✓\033[0m %-14s %s\n' "$T" "liegt in ~/.local/bin"
 	else

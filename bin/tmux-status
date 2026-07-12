@@ -1,0 +1,68 @@
+#!/bin/sh
+# tmux-status — CPU, RAM, Akku fuer die tmux-Statusleiste.
+#
+# Ersetzt die Plugins tmux-cpu und tmux-battery. Warum: am NB30 gemessen,
+#   Plugins        0,291 s pro Aktualisierung
+#   dieses Skript  0,030 s
+# also ein Zehntel. Auf einem Atom N450 ist das der Unterschied zwischen
+# "kostet nichts" und "die Anzeige frisst, was sie misst".
+#
+# Dazu kam: tmux-cpu ruft 'iostat' auf und faellt, wo das fehlt, auf 'ps'
+# zurueck — dort summiert es ueber alle Kerne und meldete auf dem Zweikern
+# 107 % Auslastung. Also nicht nur teuer, sondern falsch.
+#
+# Hier wird nur gelesen: /proc/stat, /proc/meminfo, /sys/class/power_supply.
+# Kein Subprozess, kein Sampling-Delay.
+
+case "${1:-}" in
+
+cpu)
+	# /proc/stat liefert Zaehler seit dem Boot, keine Momentaufnahme. Die
+	# Auslastung ergibt sich erst aus der Differenz zum letzten Aufruf —
+	# darum der Zwischenspeicher.
+	CACHE="/tmp/tmux-status-cpu-$(id -u)"
+	read -r _ a b c idle rest < /proc/stat
+	total=$((a + b + c + idle))
+	for v in $rest; do total=$((total + v)); done
+
+	if [ -r "$CACHE" ]; then
+		read -r ptotal pidle < "$CACHE" 2>/dev/null
+		dt=$((total - ptotal))
+		di=$((idle - pidle))
+		if [ "$dt" -gt 0 ]; then
+			printf '%3d%%' $(( (dt - di) * 100 / dt ))
+		else
+			printf '  0%%'
+		fi
+	else
+		printf '  -%%'   # erster Aufruf: es gibt noch nichts zu vergleichen
+	fi
+	echo "$total $idle" > "$CACHE"
+	;;
+
+ram)
+	awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END{
+		if (t > 0) printf "%3d%%", (t - a) / t * 100; else printf "  -%%"
+	}' /proc/meminfo
+	;;
+
+akku)
+	# BAT1 am NB30, aber nicht hart verdrahten — Geraete heissen verschieden.
+	for B in /sys/class/power_supply/BAT*; do
+		[ -r "$B/capacity" ] || continue
+		C=$(cat "$B/capacity")
+		S=$(cat "$B/status" 2>/dev/null)
+		case "$S" in
+			Charging) printf '%3d%%+' "$C" ;;   # + = laedt gerade
+			*)        printf '%3d%%'  "$C" ;;
+		esac
+		exit 0
+	done
+	# kein Akku gefunden (am Netz, oder Desktop): still nichts ausgeben
+	;;
+
+*)
+	echo "Aufruf: tmux-status cpu|ram|akku" >&2
+	exit 1
+	;;
+esac
