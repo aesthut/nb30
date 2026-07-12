@@ -1,0 +1,92 @@
+#!/bin/sh
+# browser — startet einen Browser. Unter dwm (Super+B) direkt, vom TTY/tmux
+# per Single-Application-X (kein Desktop, kein WM; X lebt nur, solange der
+# Browser laeuft — beim Schliessen faellt man zurueck in TTY/tmux).
+#
+# Reihenfolge (leicht -> schwer):
+#   luakit   (WebKitGTK, vim-artig: o = URL, t = Tab, / = suchen) — Standard
+#   badwolf  (WebKitGTK, minimal)
+#   surf     (suckless, Strg-g = URL eingeben)
+#   firefox  NUR mit --firefox erzwungen: schwer (~500 MB), aber die einzige
+#            Engine, an der Bank-Logins/2FA verlaesslich nicht scheitern.
+#
+# Zum blossen Nachschlagen ist w3m im tmux schneller als das alles hier.
+#
+# Aufruf:
+#   browser [URL]
+#   browser --firefox [URL]
+usage(){ echo "Aufruf: browser [--firefox] [URL]" >&2; exit 1; }
+
+FORCE_FF=0
+case "${1:-}" in
+  --firefox) FORCE_FF=1; shift ;;
+  -h|--help) usage ;;
+esac
+URL="${1:-}"
+
+have(){ command -v "$1" >/dev/null 2>&1; }
+
+# --- Browser waehlen ------------------------------------------------------
+# firefox-esr installiert das Binary teils als 'firefox', teils als 'firefox-esr'.
+find_ff(){ for f in firefox-esr firefox; do have "$f" && { echo "$f"; return 0; }; done; return 1; }
+
+BR=""
+if [ "$FORCE_FF" -eq 1 ]; then
+  BR=$(find_ff) || { echo "firefox(-esr) nicht installiert." >&2; exit 1; }
+else
+  for c in luakit badwolf surf; do
+    if have "$c"; then BR="$c"; break; fi
+  done
+  if [ -z "$BR" ]; then
+    if BR=$(find_ff); then
+      echo "Kein leichter Browser (luakit/badwolf/surf) gefunden — nehme $BR." >&2
+    else
+      echo "Kein Browser gefunden. Installiere luakit (oder badwolf/surf)." >&2
+      exit 1
+    fi
+  fi
+fi
+
+# --- GMA 3150: WebKit darf nicht komponieren ------------------------------
+# Der Chip hat kein brauchbares HW-GL (siehe Setup-Doku). Laesst man WebKitGTK
+# trotzdem den Compositor anwerfen, gibt es leere/weisse Seiten oder Abstuerze.
+export WEBKIT_DISABLE_COMPOSITING_MODE=1
+export LIBGL_ALWAYS_SOFTWARE=1
+BRPATH="$(command -v "$BR")"
+
+# --- Laeuft schon X? Dann direkt starten ---------------------------------
+# Genau der Fall unter dwm (Super+B). Ohne das wuerde startx einen zweiten
+# X-Server hochziehen — auf dem N450 der sichere Weg ins Chaos.
+if [ -n "${DISPLAY:-}" ]; then
+  if [ -n "$URL" ]; then
+    exec "$BRPATH" "$URL"
+  elif [ "$BR" = surf ]; then
+    exec "$BRPATH" "https://start.duckduckgo.com/"
+  else
+    exec "$BRPATH"
+  fi
+fi
+
+# --- Ab hier: kein X (TTY/tmux) -> Single-Application-X ------------------
+# --- Voraussetzung: startx / xinit ---------------------------------------
+if ! have startx; then
+  echo "startx fehlt (xorg-xinit/xinit). Ueber dwm-nb30/install.sh installieren." >&2
+  exit 1
+fi
+
+# --- freien Display finden ------------------------------------------------
+d=1
+while [ -e "/tmp/.X11-unix/X$d" ]; do d=$((d + 1)); done
+
+# --- als Single-App starten ----------------------------------------------
+# Vor dem Browser noch das dt./oesterr. Tastaturlayout setzen (fuer URL/Login).
+# surf braucht eine URL; ohne Argument bekommt es eine schlichte Startseite.
+CMD="setxkbmap de 2>/dev/null; exec '$BRPATH'"
+if [ -n "$URL" ]; then
+  CMD="$CMD '$URL'"
+elif [ "$BR" = surf ]; then
+  CMD="$CMD 'https://start.duckduckgo.com/'"
+fi
+
+echo ">>> $BR startet (Display :$d). Browser schliessen -> zurueck ins Terminal." >&2
+exec startx /bin/sh -c "$CMD" -- ":$d"

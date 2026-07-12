@@ -1,0 +1,51 @@
+#!/bin/sh
+# tmux-hilfe — Spickzettel im Terminal. Standardgriffe, wie in der Config.
+# Farben ueber ANSI-Indizes, damit es auch auf der 16-Farben-TTY sauber aussieht.
+# Siehe Vault: 07 IT & Server/Tools & APIs/tmux - Spickzettel & Setup.md
+
+C='\033[36m'   # cyan
+D='\033[37m'   # hell
+G='\033[90m'   # gedaempft
+B='\033[1m'
+R='\033[0m'
+
+printf "\n  ${B}${C}tmux — Spickzettel${R}\n\n"
+
+printf "  ${B}${D}Immer zuerst:${R}  ${B}${C}Strg+B${R}  ${G}druecken, loslassen${R}  ${D}dann erst die Taste.${R}\n"
+printf "  ${G}Zwei Bewegungen, nicht alles gleichzeitig. Unten steht nur die zweite Taste.${R}\n\n"
+
+printf "  ${B}${C}Teilen${R}\n"
+printf "    ${B}%%${R}      nebeneinander teilen        ${G}(Shift + 5)${R}\n"
+printf "    ${B}\"${R}      uebereinander teilen        ${G}(Shift + 2)${R}\n"
+printf "    ${B}z${R}      aktuelles Feld gross/klein  ${G}(nichts geht verloren)${R}\n"
+printf "    ${B}x${R}      Feld schliessen             ${G}(fragt nach)${R}\n\n"
+
+printf "  ${B}${C}Wechseln${R}\n"
+printf "    ${B}Pfeiltasten${R}   ins Feld links / rechts / oben / unten\n"
+printf "    ${B}Strg+Pfeil${R}    Feldgrenze verschieben ${G}(Strg gedrueckt halten)${R}\n"
+printf "    ${B}o${R}             reihum durch die Felder\n\n"
+
+printf "  ${B}${C}Fenster${R}  ${G}(wie Tabs, unten in der Leiste)${R}\n"
+printf "    ${B}c${R}      neues Fenster\n"
+printf "    ${B}0${R} ${B}1${R} ${B}2${R}  zu Fenster 0, 1, 2 ...\n"
+printf "    ${B}n${R} ${B}p${R}    naechstes / voriges Fenster\n"
+printf "    ${B},${R}      Fenster umbenennen\n"
+printf "    ${B}&${R}      Fenster schliessen\n\n"
+
+printf "  ${B}${C}Der eigentliche Zweck${R}\n"
+printf "    ${B}d${R}             raus — ${D}alles laeuft weiter${R}\n"
+printf "    ${G}tmux attach${R}   wieder rein, genau wie vorher\n"
+printf "    ${G}tmux ls${R}       welche Sitzungen laufen?\n"
+printf "    ${G}${R}              ${G}Terminal zumachen, ssh abbrechen: egal. Es laeuft.${R}\n\n"
+
+printf "  ${B}${C}Wenn du nicht weiterweisst${R}\n"
+printf "    ${B}?${R}      alle Tastenkombinationen  ${G}(raus mit q)${R}\n"
+printf "    ${B}[${R}      zurueckblaettern          ${G}(raus mit q)${R}\n"
+printf "    ${B}Strg+B${R} ${B}Strg+B${R}   schickt ein echtes Strg+B ans Programm\n\n"
+
+printf "  ${B}${C}Am NB30${R}\n"
+printf "    ${G}ssh vps${R}       alles, was rechnet — Claude Code laeuft hier nicht\n"
+printf "    ${G}w3m URL${R}       schnell nachschlagen, ohne X\n"
+printf "    ${G}browser URL${R}   echte Webseite (startet X nur fuer den Browser)\n\n"
+
+printf "  ${G}Die Maus geht auch: klicken, scrollen, Grenzen ziehen.${R}\n\n"
