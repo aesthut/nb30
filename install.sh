@@ -69,7 +69,7 @@ setkv(){ # datei schluessel wert — idempotent
 # FONT: ter-118b — 9x18, fett. Am Geraet als passend befunden (ter-116n war zu
 # klein und zu duenn, ter-124b zu gross). Andere Schriften zum Durchprobieren
 # holt 'tty-font' (Tamzen, Spleen) — siehe bin/tty-font.
-# Anders waehlen:  FONT_NAME=Tamzen10x20b ./install.sh
+# Anders waehlen:  FONT_NAME=Tamzen10x20 ./install.sh   (Tamzen hat kein Fett)
 FONT_NAME="${FONT_NAME:-ter-118b}"
 
 msg "Konsolen-Font ($FONT_NAME) + Tastaturlayout (runit liest /etc/rc.conf)"
