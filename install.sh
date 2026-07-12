@@ -66,18 +66,29 @@ setkv(){ # datei schluessel wert — idempotent
 	fi
 }
 
-# FONT: ter-118b — 9x18, fett. Am Geraet als passend befunden (ter-116n war zu
-# klein und zu duenn, ter-124b zu gross). Andere Schriften zum Durchprobieren
-# holt 'tty-font' (Tamzen, Spleen) — siehe bin/tty-font.
-# Anders waehlen:  FONT_NAME=Tamzen10x20 ./install.sh   (Tamzen hat kein Fett)
-FONT_NAME="${FONT_NAME:-ter-118b}"
+# FONT: TamzenForPowerline10x20 — am Geraet ausgesucht. Weicher gezeichnet als
+# Terminus, und die Powerline-Variante bringt Pfeil- und Blockzeichen mit.
+# Kein Void-Paket: 'tty-font --holen' laedt ihn, darum laeuft das HIER, bevor
+# der Font in rc.conf eingetragen wird. Sonst staende dort ein Font, den es auf
+# der Platte nicht gibt — und der Boot fiele stumm auf den Standard zurueck.
+# Andere waehlen:  FONT_NAME=ter-118b ./install.sh
+FONT_NAME="${FONT_NAME:-TamzenForPowerline10x20}"
+
+msg "Konsolenschriften holen (Tamzen, Spleen)"
+chmod +x "$HERE/bin/tty-font"   # wird weiter unten nochmal gesetzt, aber hier schon gebraucht
+"$HERE/bin/tty-font" --holen || msg "  Warnung: Schriften nicht ladbar (Netz?)"
+
+# Traegt sich der gewuenschte Font wirklich? Wenn nicht, auf Terminus zurueck —
+# lieber eine haessliche Konsole als eine, die nach dem Reboot nicht lesbar ist.
+if ! sudo setfont "$FONT_NAME" 2>/dev/null; then
+	msg "  '$FONT_NAME' nicht ladbar — falle auf ter-118b zurueck"
+	FONT_NAME="ter-118b"
+	sudo setfont "$FONT_NAME" 2>/dev/null || true
+fi
 
 msg "Konsolen-Font ($FONT_NAME) + Tastaturlayout (runit liest /etc/rc.conf)"
 setkv /etc/rc.conf FONT   "\"$FONT_NAME\""
 setkv /etc/rc.conf KEYMAP '"de-latin1-nodeadkeys"'
-
-# sofort anwenden, damit man nicht erst neu booten muss
-sudo setfont "$FONT_NAME" 2>/dev/null || true
 sudo loadkeys de-latin1-nodeadkeys 2>/dev/null || true
 
 # --- 3. tmux --------------------------------------------------------------

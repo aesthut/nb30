@@ -75,13 +75,13 @@ case "${1:-}" in
 	echo "  Konsolenschriften — ausprobieren mit:  sudo setfont NAME"
 	echo
 	echo "  Terminus (sachlich, sehr lesbar; b = fett)"
-	echo "    ter-116b   8x16    ter-118b   9x18   <- aktuell"
+	echo "    ter-116b   8x16    ter-118b   9x18"
 	echo "    ter-120b  10x20    ter-124b  12x24"
 	echo
 	if [ -f "$FONTDIR/Tamzen10x20.psf" ]; then
 		echo "  Tamzen (weicher, freundlicher als Terminus; kein Fett-Schnitt)"
-		echo "    Tamzen8x16     Tamzen10x20   <- dein 9x18 liegt dazwischen"
-		echo "    TamzenForPowerline8x16   TamzenForPowerline10x20"
+		echo "    Tamzen8x16     Tamzen10x20"
+		echo "    TamzenForPowerline8x16   TamzenForPowerline10x20   <- Standard"
 		echo "      (die Powerline-Variante bringt Pfeil- und Blockzeichen mit)"
 		echo
 	fi
