@@ -1,0 +1,102 @@
+#!/bin/sh
+# tty-font — schoene Konsolenschriften holen, ausprobieren, festlegen.
+#
+# Die Textkonsole kann nur BITMAP-Fonts im PSF-Format. TrueType (JetBrains Mono,
+# Nerd Fonts) geht dort grundsaetzlich nicht — der Kernel malt Zeichen aus einer
+# festen Pixelmatrix. Die Auswahl ist also begrenzt, aber es gibt mehr als
+# Terminus:
+#
+#   Terminus  — sachlich, sehr lesbar. Der Standard. (schon installiert)
+#   Tamzen    — gepflegter Tamsyn-Fork. Weicher, freundlicher als Terminus.
+#               Es gibt eine Powerline-Variante mit Zusatzzeichen.
+#   Spleen    — klar und modern, etwas schmaler.
+#
+# Aufruf:
+#   tty-font              zeigt, was da ist, und wie man es ausprobiert
+#   tty-font --holen      laedt Tamzen + Spleen nach /usr/share/kbd/consolefonts
+#   tty-font --setzen X   traegt X dauerhaft in /etc/rc.conf ein
+
+set -eu
+
+FONTDIR=/usr/share/kbd/consolefonts
+TAMZEN="https://github.com/sunaku/tamzen-font/raw/master/psf"
+SPLEEN="https://github.com/fcambus/spleen/releases/download/2.2.0/spleen-2.2.0.tar.gz"
+
+case "${1:-}" in
+--holen)
+	command -v curl >/dev/null 2>&1 || { echo "curl fehlt." >&2; exit 1; }
+	TMP=$(mktemp -d)
+	trap 'rm -rf "$TMP"' EXIT
+
+	# Tamzen hat KEINE Bold-Varianten — die Namen sind genau diese.
+	# (Am 12.7.2026 gegen die Repo-Dateiliste geprueft, geratene "…b"-Namen
+	# liefen in einen 404.)
+	echo ">>> Tamzen holen (8x16, 10x20, jeweils auch als Powerline-Variante)"
+	for f in Tamzen8x16 Tamzen10x20 \
+	         TamzenForPowerline8x16 TamzenForPowerline10x20; do
+		if curl -fsSL "$TAMZEN/$f.psf" -o "$TMP/$f.psf"; then
+			sudo install -Dm644 "$TMP/$f.psf" "$FONTDIR/$f.psf"
+			echo "    $f"
+		else
+			echo "    $f -- nicht ladbar, uebersprungen" >&2
+		fi
+	done
+
+	echo ">>> Spleen holen (8x16, 12x24)"
+	if curl -fsSL "$SPLEEN" -o "$TMP/spleen.tgz"; then
+		tar xzf "$TMP/spleen.tgz" -C "$TMP"
+		for f in $(find "$TMP" -name 'spleen-8x16.psfu' -o -name 'spleen-12x24.psfu'); do
+			sudo install -Dm644 "$f" "$FONTDIR/$(basename "$f")"
+			echo "    $(basename "$f")"
+		done
+	else
+		echo "    Spleen nicht ladbar, uebersprungen" >&2
+	fi
+
+	echo
+	echo "Fertig. Jetzt durchprobieren:"
+	echo "    tty-font"
+	;;
+
+--setzen)
+	NEU="${2:-}"
+	[ -n "$NEU" ] || { echo "Aufruf: tty-font --setzen NAME" >&2; exit 1; }
+	sudo setfont "$NEU" || { echo "Font '$NEU' nicht gefunden." >&2; exit 1; }
+	if sudo grep -q '^FONT=' /etc/rc.conf 2>/dev/null; then
+		sudo sed -i "s|^FONT=.*|FONT=\"$NEU\"|" /etc/rc.conf
+	else
+		echo "FONT=\"$NEU\"" | sudo tee -a /etc/rc.conf >/dev/null
+	fi
+	echo "FONT=\"$NEU\" in /etc/rc.conf — bleibt nach dem Neustart."
+	;;
+
+*)
+	echo
+	echo "  Konsolenschriften — ausprobieren mit:  sudo setfont NAME"
+	echo
+	echo "  Terminus (sachlich, sehr lesbar; b = fett)"
+	echo "    ter-116b   8x16    ter-118b   9x18   <- aktuell"
+	echo "    ter-120b  10x20    ter-124b  12x24"
+	echo
+	if [ -f "$FONTDIR/Tamzen10x20.psf" ]; then
+		echo "  Tamzen (weicher, freundlicher als Terminus; kein Fett-Schnitt)"
+		echo "    Tamzen8x16     Tamzen10x20   <- dein 9x18 liegt dazwischen"
+		echo "    TamzenForPowerline8x16   TamzenForPowerline10x20"
+		echo "      (die Powerline-Variante bringt Pfeil- und Blockzeichen mit)"
+		echo
+	fi
+	if [ -f "$FONTDIR/spleen-8x16.psfu" ]; then
+		echo "  Spleen (klar, modern, etwas schmaler)"
+		echo "    spleen-8x16    spleen-12x24"
+		echo
+	fi
+	if [ ! -f "$FONTDIR/Tamzen10x20.psf" ]; then
+		echo "  Tamzen und Spleen sind noch nicht da:"
+		echo "    tty-font --holen"
+		echo
+	fi
+	echo "  Gefaellt eine? Dauerhaft machen:"
+	echo "    tty-font --setzen Tamzen10x20b"
+	echo
+	;;
+esac
