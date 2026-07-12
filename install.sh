@@ -58,9 +58,15 @@ sudo xbps-install -Sy \
 	xf86-video-intel mesa-dri xf86-input-libinput \
 	dejavu-fonts-ttf liberation-fonts-ttf
 
-# Browser: nicht abbruchhart. Fehlt einer, bleibt nur der zugehoerige Weg zu.
-msg "Browser (luakit als Alltag, firefox-esr als Notnagel)"
-for p in luakit firefox-esr; do
+# Browser: FIREFOX, nicht luakit. Am 12.7.2026 durchgetestet: luakit (WebKitGTK)
+# braucht auf der GMA 3150 zwingend Software-Rendering und ist damit auf einem
+# 1,66-GHz-Atom unbrauchbar zaeh — selbst auf einer reinen Textseite. Firefox
+# kommt mit dem Chip allein zurecht und laeuft fluessig.
+# xdotool zieht das Fenster auf volle Groesse: ohne Fenstermanager tut das sonst
+# niemand, und Firefox laesst auf 1024x600 sonst viel Platz liegen.
+# Nicht abbruchhart: fehlt eines, bleibt nur der zugehoerige Weg zu.
+msg "Browser (firefox — auf dieser Kiste der einzige brauchbare)"
+for p in firefox xdotool; do
 	sudo xbps-install -y "$p" >/dev/null 2>&1 \
 		|| msg "  Warnung: '$p' nicht installierbar — 'browser' faellt auf den naechsten zurueck"
 done
@@ -171,7 +177,8 @@ check setfont    "Konsolen-Font"
 check startx     "X fuer den Browser"
 check setxkbmap  "de-Layout im X (setzt 'browser' selbst)"
 check w3m        "Nachschlagen ohne X"
-check luakit     "Browser (oder firefox-esr als Rueckfall)"
+check firefox    "Browser — auf dieser Kiste der einzige brauchbare"
+check xdotool    "zieht das Browserfenster auf den ganzen Schirm (kein WM da)"
 check git        "Repos"
 check dbus-run-session "Session-Bus fuer den Browser — ohne das startet KEINER"
 

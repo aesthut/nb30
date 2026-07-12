@@ -1,25 +1,27 @@
 #!/bin/sh
-# browser — startet einen Browser. Unter dwm (Super+B) direkt, vom TTY/tmux
-# per Single-Application-X (kein Desktop, kein WM; X lebt nur, solange der
-# Browser laeuft — beim Schliessen faellt man zurueck in TTY/tmux).
+# browser — startet einen Browser. Vom TTY/tmux per Single-Application-X:
+# kein Desktop, kein Fenstermanager. X lebt nur, solange der Browser laeuft —
+# beim Schliessen faellt man zurueck in TTY/tmux.
 #
-# Reihenfolge (leicht -> schwer):
-#   luakit   (WebKitGTK, vim-artig: o = URL, t = Tab, / = suchen) — Standard
-#   badwolf  (WebKitGTK, minimal)
-#   surf     (suckless, Strg-g = URL eingeben)
-#   firefox  NUR mit --firefox erzwungen: schwer (~500 MB), aber die einzige
-#            Engine, an der Bank-Logins/2FA verlaesslich nicht scheitern.
+# FIREFOX ist der Standard, und das ist auf dieser Kiste keine Geschmacksfrage.
+# luakit (WebKitGTK) braucht auf der GMA 3150 zwingend Software-Rendering
+# (LIBGL_ALWAYS_SOFTWARE), sonst weisse Seiten — und dann muss ein 1,66-GHz-Atom
+# jedes Pixel selbst zeichnen. Am 12.7.2026 durchgetestet: unbrauchbar zaeh,
+# selbst auf einer Textseite. Firefox kommt mit dem Chip allein zurecht und
+# laeuft fluessig. Die WebKit-Browser bleiben nur als Rueckfall drin, falls
+# Firefox einmal fehlt.
 #
-# Zum blossen Nachschlagen ist w3m im tmux schneller als das alles hier.
+# Zum blossen Nachschlagen ist w3m im tmux immer noch schneller als das hier.
 #
 # Aufruf:
-#   browser [URL]
-#   browser --firefox [URL]
-usage(){ echo "Aufruf: browser [--firefox] [URL]" >&2; exit 1; }
+#   browser [URL]            # Firefox
+#   browser --webkit [URL]   # luakit/badwolf/surf erzwingen (i.d.R. sinnlos)
+usage(){ echo "Aufruf: browser [--webkit] [URL]" >&2; exit 1; }
 
-FORCE_FF=0
+FORCE_WK=0
 case "${1:-}" in
-  --firefox) FORCE_FF=1; shift ;;
+  --webkit)  FORCE_WK=1; shift ;;
+  --firefox) shift ;;          # bleibt als Alias erlaubt, ist jetzt der Default
   -h|--help) usage ;;
 esac
 URL="${1:-}"
@@ -27,23 +29,21 @@ URL="${1:-}"
 have(){ command -v "$1" >/dev/null 2>&1; }
 
 # --- Browser waehlen ------------------------------------------------------
-# firefox-esr installiert das Binary teils als 'firefox', teils als 'firefox-esr'.
-find_ff(){ for f in firefox-esr firefox; do have "$f" && { echo "$f"; return 0; }; done; return 1; }
+# Das Binary heisst je nach Paket 'firefox' oder 'firefox-esr'.
+find_ff(){ for f in firefox firefox-esr; do have "$f" && { echo "$f"; return 0; }; done; return 1; }
+find_wk(){ for c in luakit badwolf surf;  do have "$c" && { echo "$c"; return 0; }; done; return 1; }
 
 BR=""
-if [ "$FORCE_FF" -eq 1 ]; then
-  BR=$(find_ff) || { echo "firefox(-esr) nicht installiert." >&2; exit 1; }
+if [ "$FORCE_WK" -eq 1 ]; then
+  BR=$(find_wk) || { echo "Kein WebKit-Browser installiert." >&2; exit 1; }
 else
-  for c in luakit badwolf surf; do
-    if have "$c"; then BR="$c"; break; fi
-  done
-  if [ -z "$BR" ]; then
-    if BR=$(find_ff); then
-      echo "Kein leichter Browser (luakit/badwolf/surf) gefunden — nehme $BR." >&2
-    else
-      echo "Kein Browser gefunden. Installiere luakit (oder badwolf/surf)." >&2
-      exit 1
-    fi
+  if BR=$(find_ff); then
+    :
+  elif BR=$(find_wk); then
+    echo "Firefox fehlt — nehme $BR. Auf dieser Kiste wird das zaeh." >&2
+  else
+    echo "Kein Browser gefunden.  sudo xbps-install -y firefox" >&2
+    exit 1
   fi
 fi
 
@@ -141,6 +141,22 @@ BRLOG=/tmp/browser-last.log       # immer mitschreiben, s.u.
 {
   echo '#!/bin/sh'
   echo 'setxkbmap de 2>/dev/null'          # de-Layout fuer URL-Zeile und Logins
+
+  # --- Fenster auf den ganzen Schirm ziehen -------------------------------
+  # Ohne Fenstermanager maximiert sich nichts von selbst: es gibt schlicht
+  # niemanden, der das taete. Firefox oeffnet daher irgendein Standardformat
+  # und laesst auf einem 1024x600-Schirm viel Platz liegen.
+  #
+  # xdotool wartet mit --sync, bis das Fenster existiert, und zieht es dann auf
+  # volle Groesse. Laeuft im Hintergrund, damit der Browser selbst nicht wartet.
+  # Fehlt xdotool, passiert einfach nichts weiter — der Browser laeuft trotzdem.
+  if have xdotool; then
+    echo "( xdotool search --sync --onlyvisible --class '$BR' 2>/dev/null \\"
+    echo "    | while read -r w; do"
+    echo "        xdotool windowmove \"\$w\" 0 0 windowsize \"\$w\" 100% 100%"
+    echo "      done ) &"
+  fi
+
   # Der Browser schreibt seine eigenen Meldungen mit. Ohne das sind sie weg,
   # sobald X den Bildschirm uebernimmt — und man raetselt, warum "nichts geht".
   if [ -n "$URL" ]; then
