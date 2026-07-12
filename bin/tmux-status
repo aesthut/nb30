@@ -52,17 +52,48 @@ akku)
 		[ -r "$B/capacity" ] || continue
 		C=$(cat "$B/capacity")
 		S=$(cat "$B/status" 2>/dev/null)
-		case "$S" in
-			Charging) printf '%3d%%+' "$C" ;;   # + = laedt gerade
-			*)        printf '%3d%%'  "$C" ;;
-		esac
+
+		if [ "$S" = "Charging" ]; then
+			printf '%d%% laedt' "$C"
+			exit 0
+		fi
+
+		# Restzeit: Ladung / Stromstaerke = Stunden. Auf einem Netbook sagt das
+		# mehr als der blosse Prozentwert — "83 %" heisst wenig, "noch 3:20"
+		# beantwortet die Frage, ob man das Netzteil suchen muss.
+		# Der N450 meldet charge_now/current_now (manche Geraete energy_/power_).
+		if [ -r "$B/charge_now" ] && [ -r "$B/current_now" ]; then
+			NOW=$(cat "$B/charge_now"); RATE=$(cat "$B/current_now")
+		elif [ -r "$B/energy_now" ] && [ -r "$B/power_now" ]; then
+			NOW=$(cat "$B/energy_now"); RATE=$(cat "$B/power_now")
+		else
+			RATE=0
+		fi
+
+		if [ "${RATE:-0}" -gt 0 ]; then
+			MIN=$(( NOW * 60 / RATE ))
+			printf '%d%% %d:%02d' "$C" $((MIN / 60)) $((MIN % 60))
+		else
+			# Rate 0: haengt am Netz oder der Wert ist noch nicht eingependelt
+			printf '%d%%' "$C"
+		fi
 		exit 0
 	done
 	# kein Akku gefunden (am Netz, oder Desktop): still nichts ausgeben
 	;;
 
+temp)
+	# Kerntemperatur. Auf einem 16 Jahre alten Atom mit passiver Kuehlung nicht
+	# uninteressant. Reiner Dateizugriff.
+	for T in /sys/class/thermal/thermal_zone*/temp; do
+		[ -r "$T" ] || continue
+		printf '%dC' "$(( $(cat "$T") / 1000 ))"
+		exit 0
+	done
+	;;
+
 *)
-	echo "Aufruf: tmux-status cpu|ram|akku" >&2
+	echo "Aufruf: tmux-status cpu|ram|akku|temp" >&2
 	exit 1
 	;;
 esac
