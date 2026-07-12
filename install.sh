@@ -102,10 +102,17 @@ for TOOL in browser tmux-hilfe tty-font; do
 	chmod +x "$HERE/bin/$TOOL"
 	ln -sf "$HERE/bin/$TOOL" "$HOME/.local/bin/$TOOL"
 done
-case ":$PATH:" in
-	*":$HOME/.local/bin:"*) ;;
-	*) msg "  Hinweis: ~/.local/bin ist nicht in \$PATH — in ~/.bash_profile ergaenzen" ;;
-esac
+# ~/.local/bin in den PATH — sonst sind browser/tmux-hilfe/tty-font zwar da,
+# aber nicht aufrufbar ("command not found"). Frueher stand hier nur ein
+# Hinweis; der half niemandem.
+PROFILE="$HOME/.bash_profile"
+touch "$PROFILE"
+if ! grep -q 'HOME/.local/bin' "$PROFILE" 2>/dev/null; then
+	msg "~/.local/bin in den PATH (in ~/.bash_profile)"
+	{ echo ''; echo '# nb30: eigene Skripte (browser, tmux-hilfe, tty-font)'
+	  echo 'export PATH="$HOME/.local/bin:$PATH"'; } >> "$PROFILE"
+	msg "  greift beim naechsten Login. Jetzt sofort:  source ~/.bash_profile"
+fi
 
 # --- 5. Selbstpruefung ----------------------------------------------------
 # Die Lehre aus acht stillen Luecken im Vorgaenger-Setup: fehlt ein Binary,
@@ -130,6 +137,10 @@ check setxkbmap  "de-Layout im X (setzt 'browser' selbst)"
 check w3m        "Nachschlagen ohne X"
 check luakit     "Browser (oder firefox-esr als Rueckfall)"
 check git        "Repos"
+# die eigenen Skripte: liegen sie im PATH?
+for T in browser tmux-hilfe tty-font; do
+	check "$T" "eigenes Skript"
+done
 
 if [ -n "$FEHLT" ]; then
 	echo
