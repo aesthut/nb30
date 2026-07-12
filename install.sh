@@ -66,12 +66,22 @@ setkv(){ # datei schluessel wert — idempotent
 	fi
 }
 
-msg "Konsolen-Font + Tastaturlayout (runit liest /etc/rc.conf)"
-setkv /etc/rc.conf FONT   '"ter-116n"'
+# FONT: ter-124b — 12x24, FETT. Auf dem 1024x600-Schirm gibt das 85 Zeichen
+# pro Zeile (ter-116n waren 128, viel zu klein). Andere Groessen zum
+# Durchprobieren, jeweils 'b' = fett, 'n' = normal:
+#   ter-120b  10x20 -> 102 Zeichen
+#   ter-124b  12x24 ->  85 Zeichen   (Default)
+#   ter-128b  14x28 ->  73 Zeichen
+#   ter-132b  16x32 ->  64 Zeichen
+# Sofort testen: sudo setfont ter-128b — und wenn es passt, hier eintragen.
+FONT_NAME="${FONT_NAME:-ter-124b}"
+
+msg "Konsolen-Font ($FONT_NAME) + Tastaturlayout (runit liest /etc/rc.conf)"
+setkv /etc/rc.conf FONT   "\"$FONT_NAME\""
 setkv /etc/rc.conf KEYMAP '"de-latin1-nodeadkeys"'
 
 # sofort anwenden, damit man nicht erst neu booten muss
-sudo setfont ter-116n 2>/dev/null || true
+sudo setfont "$FONT_NAME" 2>/dev/null || true
 sudo loadkeys de-latin1-nodeadkeys 2>/dev/null || true
 
 # --- 3. tmux --------------------------------------------------------------
