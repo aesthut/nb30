@@ -1,0 +1,66 @@
+# ~/.config/starship.toml — nb30
+#
+# Auf die LINUX-TEXTKONSOLE abgestimmt, nicht auf ein modernes Terminal:
+#
+#   * Nur die 16 ANSI-Farben. Hex-Werte (#2e3440) waeren dort sinnlos, sie
+#     wuerden beliebig gemappt.
+#   * Keine Nerd-Font-Icons. Ein PSF-Konsolenfont traegt nur ein paar hundert
+#     Glyphen — Icons erschienen als leere Kaestchen. Also Text statt Symbole.
+#   * Die Powerline-Pfeile ( ) kann der Font TamzenForPowerline10x20.
+#     Steht ein anderer Font in /etc/rc.conf, gaebe es hier Kaestchen:
+#       tty-font --setzen TamzenForPowerline10x20
+#
+# Zeitbudget: starship rechnet bei jedem Enter. 'command_timeout' deckelt das,
+# damit ein langsames git-Kommando den Prompt nicht haengen laesst.
+
+command_timeout = 1000
+add_newline = false
+
+format = """
+[](blue)\
+$directory\
+$git_branch\
+$git_status\
+[ ](fg:blue)\
+$character"""
+
+[directory]
+style = "bg:blue fg:white"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncate_to_repo = true
+
+[git_branch]
+symbol = ""
+style = "bg:blue fg:bright-white"
+format = "[](fg:blue bg:bright-black)[ $branch ](fg:bright-white bg:bright-black)"
+
+[git_status]
+style = "bg:bright-black fg:bright-yellow"
+format = "[$all_status$ahead_behind ](fg:bright-yellow bg:bright-black)"
+# Text statt Symbolen — die Konsole hat keine Icons.
+conflicted = "!"
+ahead = "^${count}"
+behind = "v${count}"
+diverged = "^${ahead_count}v${behind_count}"
+untracked = "?"
+stashed = "S"
+modified = "*"
+staged = "+"
+renamed = "r"
+deleted = "x"
+
+# Das Zeichen ganz vorn: gruen wenn der letzte Befehl lief, rot wenn nicht.
+# Damit sieht man Fehler, ohne $? abfragen zu muessen.
+[character]
+success_symbol = "[ ](bold green)"
+error_symbol = "[ ](bold red)"
+
+# Batterie im Prompt: nein. Sie steht schon in der tmux-Leiste.
+[battery]
+disabled = true
+
+# Kein Zeitstempel, keine Sprachversionen — beides steht entweder in der
+# tmux-Leiste oder interessiert auf dieser Kiste nicht.
+[time]
+disabled = true

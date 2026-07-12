@@ -71,6 +71,34 @@ for p in firefox xdotool; do
 		|| msg "  Warnung: '$p' nicht installierbar — 'browser' faellt auf den naechsten zurueck"
 done
 
+# --- 1a. Die Arbeitsumgebung ----------------------------------------------
+# Ohne die ist tmux ein leerer Schreibtisch. Am 12.7.2026 fiel auf, dass auf
+# dem NB30 nicht einmal 'nano' lag — man konnte auf dem Geraet keine einzige
+# Datei bearbeiten.
+#
+#   micro    Editor. Bedient sich wie ein normaler: Strg+S, Strg+Q, Maus.
+#            Kein Vim-Lernen noetig — es wird schon tmux gelernt.
+#   ranger   Dateimanager. ZIEHT PYTHON NACH (23 MB) und startet dadurch auf
+#            einem Atom spuerbar traeger als ein Go-Programm. Bewusst gewaehlt:
+#            bessere Vorschau, und Roland kennt die Bedienung. Fuehlt es sich
+#            zaeh an, ist 'lf' der Ersatz (gleiches Konzept, ohne Python).
+#   htop     Prozesse. 407 KB. (btop sieht besser aus, malt aber staendig neu.)
+#   eza/bat  ls und cat mit Farben — der sichtbarste Komfortgewinn.
+#   ripgrep  Suche, die auch auf dieser Kiste schnell ist.
+#   zoxide   'z projekt' springt dorthin, wo man oft war.
+#   starship Prompt mit Git-Zustand und Powerline-Pfeilen (der Font kann sie).
+#   bash-completion  Tab-Vervollstaendigung. Fehlte komplett.
+#
+# BEWUSST NICHT: helix (207 MB), yazi (23 MB), btop — alle drei schoen, alle
+# drei zu hungrig fuer diese Hardware.
+msg "Arbeitsumgebung (Editor, Dateimanager, Werkzeuge)"
+sudo xbps-install -y \
+	micro ranger htop ncdu tree \
+	eza bat ripgrep fd \
+	zoxide starship \
+	bash-completion \
+	|| msg "  Warnung: nicht alle Werkzeuge installierbar"
+
 # --- 2. Textkonsole: Font + Keymap ---------------------------------------
 # Bewusst KEIN Theming der Palette. Zwei Gruende:
 #   1. Die Linux-Konsole kann nur 16 Farben — Nord ginge nur ueber die
@@ -113,6 +141,20 @@ msg "Konsolen-Font ($FONT_NAME) + Tastaturlayout (runit liest /etc/rc.conf)"
 setkv /etc/rc.conf FONT   "\"$FONT_NAME\""
 setkv /etc/rc.conf KEYMAP '"de-latin1-nodeadkeys"'
 sudo loadkeys de-latin1-nodeadkeys 2>/dev/null || true
+
+# --- 2a. Shell einrichten -------------------------------------------------
+# Hier steckt mehr Komfort als in der halben tmux-Plugin-Liste: Strg+R
+# durchsucht die ganze Befehlshistorie, Tab vervollstaendigt endlich Optionen
+# und git-Branches, ls und cat zeigen Farben.
+msg "~/.bashrc und Prompt einrichten"
+if [ -e "$HOME/.bashrc" ] && [ ! -L "$HOME/.bashrc" ]; then
+	mv "$HOME/.bashrc" "$HOME/.bashrc.bak.$(date +%Y%m%d%H%M%S)"
+	msg "  bestehende ~/.bashrc gesichert"
+fi
+ln -sf "$HERE/bashrc" "$HOME/.bashrc"
+
+mkdir -p "$HOME/.config"
+ln -sf "$HERE/starship.toml" "$HOME/.config/starship.toml"
 
 # --- 3. tmux --------------------------------------------------------------
 msg "~/.tmux.conf verlinken"
@@ -181,7 +223,13 @@ check firefox    "Browser — auf dieser Kiste der einzige brauchbare"
 check xdotool    "zieht das Browserfenster auf den ganzen Schirm (kein WM da)"
 check git        "Repos"
 check dbus-run-session "Session-Bus fuer den Browser — ohne das startet KEINER"
-check fzf        "Suchliste in tmux (Strg+B, dann F)"
+check fzf        "Suchliste in tmux (Strg+B, dann F) + Strg+R in der Shell"
+check micro      "Editor — ohne den kann man auf dem Geraet nichts bearbeiten"
+check ranger     "Dateimanager"
+check htop       "Prozesse"
+check eza        "ls mit Farben"
+check bat        "cat mit Syntaxfarben"
+check starship   "Prompt"
 
 # Schriften: kein Binary, also von Hand pruefen. Ohne skalierbare Fonts zeigt
 # Firefox eine Seite komplett ohne Text.
